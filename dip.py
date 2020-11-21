@@ -1,75 +1,59 @@
 # from datetime import datetime, timedelta
 
 import argparse
+import pandas as pd
 from colorama import Fore
 # import matplotlib.pyplot as plt
 
 from utils import utils, data
 
-DATE_FORMAT = '%Y-%m-%d'
+# DATE_FORMAT = '%Y-%m-%d'
 
 class DataContainer:
-    def __init__(self, symbol, provider, verbose=False):
-        self.DATA_PATHS = {
+    def __init__(self, symbol, provider, sandbox=False, verbose=False):
+        DATA_PATHS = {
             'yahoo':        '/scripts/yahoo/yahoo-historical',
-            'iex':          '/scripts/iex-historical/cloud',
-            'iex_sandbox':  '/scripts/iex-historical/sandbox'
+            'iex':          '/scripts/iex-historical'
         }
+        if provider == 'iex':
+            DATA_PATHS[provider] += f"/{'sandbox' if sandbox else 'cloud'}"
 
-        self.HEADER_FIELDS = {
+        DATA_COLUMNS = {
             'yahoo':    { 'date': 'Date', 'close': 'Close' },
             'iex':      { 'date': 'date', 'close': 'close' }
         }
 
-        self.verbose = verbose
-
-        self.data = self.historical_data(self.DATA_PATHS[provider], symbol)
-        self.data = self.float_rows(self.data, [self.HEADER_FIELDS[provider]['close']])
-        self.data = self.csv_split(self.data)
-        self.data['headers'] = self.standard_headers(self.headers)
-
-    @property
-    def headers(self):
-        return self.data['headers']
-
-    @property
-    def rows(self):
-        return self.data['rows']
-
-    #  read historical data
-    def historical_data(self, path, symbol):
-        file = f'{path}/{symbol}.csv'
-
-        if self.verbose:
-            utils.cprint('Historical Data', Fore.GREEN)
+        file = f'{DATA_PATHS[provider]}/{symbol}.csv'
+        if verbose:
             utils.cprint(file, Fore.CYAN)
 
-        return data.read_csv(file)
+        date = DATA_COLUMNS[provider]['date']
+        close = DATA_COLUMNS[provider]['close']
+        index = date
 
-    # convert fields to float
-    def float_rows(self, data, fields):
-        if self.verbose:
-            utils.cprint('Float Rows', Fore.GREEN)
-            utils.cprint(fields, Fore.CYAN)
+        # read dataframe from file
+        df = data.df_read(file, index=index)
 
-        split = self.csv_split(data)
-        headers = split['headers']
-        rows = split['rows']
+        if df is not None:
+            # convert close to float
+            df[close] = df[close].astype(float)
 
-        for row in rows:
-            for field in fields:
-                index = headers.index(field)
-                row[index] = float(row[index])
+            # columns to keep (exclude index)
+            keep = DATA_COLUMNS[provider].values()
+            keep = list(filter(index.__ne__, keep))
+            df = df[keep]
 
-        return data
+            # convert index to timestamp format
+            df.index = pd.to_datetime(df.index)
 
-    # split csv data in headers and rows
-    def csv_split(self, data):
-        return { 'headers': data[0], 'rows': data[1:] }
+            # lowercase index name and columns
+            df.index.name = df.index.name.lower()
+            df.rename(columns=str.lower, inplace=True)
 
-    # same headers for all providers
-    def standard_headers(self, headers):
-        return [field.lower() for field in headers]
+        if verbose:
+            print(df)
+
+        self.df = df
 
 # indices pointing to all time high prices
 def ath_indices(symbol, data):
