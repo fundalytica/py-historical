@@ -275,22 +275,6 @@ def draw_plot(data, dip_indices, dip_ath_indices, edge_indices, final_indices):
     file_path = utils.file_path(__file__)
     plt.savefig(f'{file_path}/figs/{symbol}-{threshold:.0f}-dips-{first}-{last}.png', dpi=150)
 
-
-    argparser = argparse.ArgumentParser(description='Yahoo Finance Historical Data')
-    argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
-    argparser.add_argument("--save", action='store_true', help="save data")
-    argparser = argparse.ArgumentParser(description='Yahoo Finance Historical Data')
-    argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
-    argparser.add_argument("--save", action='store_true', help="save data")
-
-    argparser = argparse.ArgumentParser(description='Yahoo Finance Historical Data')
-    argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
-    argparser.add_argument("--save", action='store_true', help="save data")
-
-    argparser = argparse.ArgumentParser(description='Yahoo Finance Historical Data')
-    argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
-    argparser.add_argument("--save", action='store_true', help="save data")
-
 argparser = argparse.ArgumentParser(description='Dip Data')
 argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
 argparser.add_argument("-d", "--dip", help="dip percentage (integer)", required=True)
