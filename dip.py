@@ -287,12 +287,24 @@ provider = args.provider
 
 verbose = utils.terminal()
 
-dc = DataContainer(symbol, provider, verbose=verbose)
-
-if verbose:
-    utils.pprint(dc.data)
+data = DataContainer(symbol, provider, verbose=verbose)
+if data.df is not None:
+    json = data.df.to_json(orient='index')
+    print(json)
 else:
-    print(dc.data)
+    print(data.df)
+
+# keep only close price
+# convert
+# df = pd.DataFrame.from_dict(dc.data)
+# print(df)
+
+# # utils.json_print(dc.data)
+
+# if verbose:
+    # utils.json_print(dc.data)
+# else:
+    # print(dc.data)
 
 # # all time high indices
 # ath_indices = ath_indices(symbol, data)
