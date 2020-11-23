@@ -271,7 +271,6 @@ def draw_plot(data, dip_indices, dip_ath_indices, edge_indices, final_indices):
     first = (first_date(data)).strftime('%Y%m%d')
     last = (last_date(data)).strftime('%Y%m%d')
 
-
     file_path = utils.file_path(__file__)
     plt.savefig(f'{file_path}/figs/{symbol}-{threshold:.0f}-dips-{first}-{last}.png', dpi=150)
 
@@ -288,23 +287,9 @@ provider = args.provider
 verbose = utils.terminal()
 
 data = DataContainer(symbol, provider, verbose=verbose)
-if data.df is not None:
-    json = data.df.to_json(orient='index')
-    print(json)
-else:
-    print(data.df)
 
-# keep only close price
-# convert
-# df = pd.DataFrame.from_dict(dc.data)
-# print(df)
-
-# # utils.json_print(dc.data)
-
-# if verbose:
-    # utils.json_print(dc.data)
-# else:
-    # print(dc.data)
+stdout = data.df.to_json(orient='index') if (data.df is not None) else data.df
+print(stdout)
 
 # # all time high indices
 # ath_indices = ath_indices(symbol, data)
