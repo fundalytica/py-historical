@@ -55,27 +55,28 @@ class DataContainer:
 
         self.df = df
 
-# indices pointing to all time high prices
-def ath_indices(symbol, data):
-    headers = data['headers']
-    rows = data['rows']
-    PRICE_INDEX = headers.index(CLOSE_ID)
+def ath_indices(df):
+    column = 'close'
 
-    indices = []
+    # first close is an all time high
+    ath_loc = 0
+    ath_index = df.index.values[ath_loc]
+    ath_close = df.iloc[ath_loc][column]
+    ath_df = pd.DataFrame([pd.Series({'loc': ath_loc, 'close': ath_close, 'prev': 0}, name=ath_index)])
 
-    ath_index = 0
-    indices.append(ath_index)
+    # go through all rows
+    for index, row in df.iterrows():
+        close = df[column][index]
 
-    for index in range(len(rows)):
-        price = rows[index][PRICE_INDEX]
-        ath = rows[ath_index][PRICE_INDEX]
+        # found new all time high
+        if close > ath_close:
+            ath_loc = df.index.get_loc(index)
+            ath_df = ath_df.append(pd.Series({'loc': ath_loc, 'close': close, 'prev': ath_close}, name=index))
+            ath_close = df[column][ath_loc]
 
-        # new all time high
-        if price > ath:
-            ath_index = index
-            indices.append(ath_index)
+    ath_df['loc'] = ath_df['loc'].astype(int)
 
-    return indices
+    return ath_df['loc'].tolist()
 
 # keep only last of consecutive all time high indices
 def remove_adjacent_indices(indices):
