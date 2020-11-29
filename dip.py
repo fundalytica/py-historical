@@ -51,6 +51,11 @@ class DataContainer:
             # remove index name
             df.index.name = None
 
+            # lowercase columns
+            # df.rename(columns=str.lower, inplace=True)
+            dict = {value:key for (key, value) in DATA_COLUMNS[provider].items()}
+            df.rename(columns=dict, inplace=True)
+
         if verbose:
             print(df)
 
