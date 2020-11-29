@@ -46,9 +46,10 @@ class DataContainer:
             # convert index to timestamp format
             df.index = pd.to_datetime(df.index)
 
-            # lowercase index name and columns
-            df.index.name = df.index.name.lower()
-            df.rename(columns=str.lower, inplace=True)
+            # lowercase index name
+            # df.index.name = df.index.name.lower()
+            # remove index name
+            df.index.name = None
 
         if verbose:
             print(df)
