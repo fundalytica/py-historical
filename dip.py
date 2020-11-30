@@ -58,28 +58,15 @@ class DataContainer:
 
         self.df = df
 
-def ath_indices(df):
+def ath_df(df):
     column = 'close'
+    mask = (df[column] == df.cummax()[column])
+    return df[mask]
 
-    # first close is an all time high
-    ath_loc = 0
-    ath_index = df.index.values[ath_loc]
-    ath_close = df.iloc[ath_loc][column]
-    ath_df = pd.DataFrame([pd.Series({'loc': ath_loc, 'close': ath_close, 'prev': 0}, name=ath_index)])
-
-    # go through all rows
-    for index, row in df.iterrows():
-        close = df[column][index]
-
-        # found new all time high
-        if close > ath_close:
-            ath_loc = df.index.get_loc(index)
-            ath_df = ath_df.append(pd.Series({'loc': ath_loc, 'close': close, 'prev': ath_close}, name=index))
-            ath_close = df[column][ath_loc]
-
-    ath_df['loc'] = ath_df['loc'].astype(int)
-
-    return ath_df['loc'].tolist()
+def ath_locs(df):
+    indices = ath_df(df).index.tolist()
+    locs = list(map(lambda index: df.index.get_loc(index), indices))
+    return locs
 
 # keep only last of consecutive all time high indices
 def remove_adjacent_indices(indices):
