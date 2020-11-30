@@ -1,13 +1,11 @@
-# from datetime import datetime, timedelta
+from colorama import Fore
 
 import argparse
+import numpy as np
 import pandas as pd
-from colorama import Fore
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 from utils import utils, data
-
-# DATE_FORMAT = '%Y-%m-%d'
 
 class DataContainer:
     def __init__(self, symbol, provider, sandbox=False, verbose=False):
