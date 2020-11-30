@@ -1,9 +1,12 @@
+import argparse
 from colorama import Fore
 
-import argparse
 import numpy as np
 import pandas as pd
+
 import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
+from matplotlib.ticker import StrMethodFormatter
 
 from utils import utils, data
 
@@ -82,72 +85,42 @@ def dip_df(df, threshold):
 
     return dip_df
 
-def draw_plot(data, dip_indices, dip_ath_indices, edge_indices, final_indices):
-    fig, ax = plt.subplots()
+def draw_plot(df, ath_df, dip_df):
+    plt.figure()
 
-    plt.figure(figsize=(8,5))
-
-    # ax.spines['top'].set_visible(False)
-    # ax.spines['right'].set_visible(False)
-    # ax.spines['bottom'].set_visible(False)
-    # ax.spines['left'].set_visible(False)
     plt.box(False)
 
-    # fig = plt.figure(linewidth=10, edgecolor='black')
+    plt.plot(df, 'k')
+    plt.plot(ath_df, 'go')
+    plt.plot(dip_df[['close']], 'ro')
 
-    ax.xaxis.set_ticks_position('none')
-    ax.yaxis.set_ticks_position('none')
+    style = dict(size=10, color='red')
+    plt.title(f'{symbol} Dips < {-threshold:.0f}%', **style)
 
-    plt.plot(indices_days(final_indices, data), indices_prices(final_indices, data), 'k')
-    plt.plot(indices_days(dip_indices, data), indices_prices(dip_indices, data), 'ro')
-    plt.plot(indices_days(dip_ath_indices, data), indices_prices(dip_ath_indices, data), 'go')
-    plt.plot(indices_days(edge_indices, data), indices_prices(edge_indices, data), 'bo')
-
-    style = dict(size=12, color='red')
-    plt.title(f'{symbol} {threshold:.0f}%+ Dips', **style)
-
-    def add_text(indices, style, offset, drop):
-        days = indices_days(indices, data)
-        prices = indices_prices(indices, data)
-
-        for index in range(len(indices)):
-            day = days[index]
-            price = prices[index]
-            text = f'${price:,.0f}'
-
-            if drop:
-                drop_percentage = dip_drop_percentage(data, indices[index], dip_ath_indices)
-                text += f'\n{drop_percentage:.0%}'
-
-            plt.annotate(text, (day, price), textcoords="offset points", xytext=offset, ha='center', va='center', **style)
-
-    text_size = 9
-    add_text(dip_indices, dict(size=text_size, color='red'), (0, -16), drop=True)
-    add_text(dip_ath_indices, dict(size=text_size, color='green'), (-12, 10), drop=False)
-    add_text(edge_indices, dict(size=text_size, color='blue'), (-12, 10), drop=False)
-
+    plt.tick_params(axis='both', which='major', labelsize=8)
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))
+    plt.gca().xaxis.set_major_formatter(DateFormatter('%b %d \'%y'))
     plt.xticks(rotation=45)
 
-    from matplotlib.ticker import StrMethodFormatter
-    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('${x:,.0f}'))
+    def annotate(df, column, color, ytext, formatter=None, arrowprops=None):
+        style = dict(size=9, color=color)
 
-    from matplotlib.ticker import FuncFormatter
-    def format_method(x, pos):
-        date = first_date(data) + timedelta(days=int(x))
-        return date.strftime('%b \'%y')
+        for index in df.index:
+            x = index
+            y = df.at[index, 'close']
+            text = df.at[index, column]
+            text = formatter(text) if formatter else text
+            plt.annotate(text, xy=(x, y), xycoords='data', xytext=(0, ytext), textcoords='offset points', arrowprops=arrowprops, ha='center', va='center', **style)
 
-    formatter = FuncFormatter(format_method)
-    plt.gca().xaxis.set_major_formatter(formatter)
+    annotate(ath_df, 'close', 'green', 15, lambda val: f'{val:,.0f}', dict(arrowstyle="]-", lw=1, color='green'))
+    annotate(dip_df, 'dip', 'red', -30, lambda val: f'{val * 100:,.0f}%', dict(arrowstyle="<-", lw=1, color='red'))
 
-    plt.margins(.08, .18)
+    plt.margins(.1, .2)
     plt.tight_layout()
     plt.show()
 
-    first = (first_date(data)).strftime('%Y%m%d')
-    last = (last_date(data)).strftime('%Y%m%d')
-
     file_path = utils.file_path(__file__)
-    plt.savefig(f'{file_path}/figs/{symbol}-{threshold:.0f}-dips-{first}-{last}.png', dpi=150)
+    plt.savefig(f'{file_path}/figs/{symbol}-{threshold:.0f}.png', dpi=150)
 
 argparser = argparse.ArgumentParser(description='Dip Data')
 argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
@@ -183,5 +156,4 @@ if verbose:
     utils.cprint('\ndip df', Fore.YELLOW)
     print(dip)
 
-
-# draw_plot(data, dip_indices, dip_ath_indices, edge_indices, final_indices)
+    draw_plot(df, ath, dip)
