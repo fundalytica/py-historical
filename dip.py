@@ -140,12 +140,17 @@ df = data.df
 ath = ath_df(df)
 dip = dip_df(df, -(threshold / 100))
 
-stdout = df.to_json(orient='columns') if (df is not None) else df
+import json
+
+stdout = {}
+stdout["all"] = json.loads(df.to_json(orient='columns'))
+stdout["ath"] = json.loads(ath.to_json(orient='columns'))
+stdout["dip"] = json.loads(dip.to_json(orient='columns'))
 print(stdout)
 
 if verbose:
     utils.cprint('\nstdout', Fore.YELLOW)
-    utils.json_print(stdout)
+    utils.obj_print(stdout)
 
     utils.cprint('\ndf', Fore.YELLOW)
     print(df)
