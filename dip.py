@@ -90,7 +90,7 @@ def draw_plot(df, ath_df, dip_df):
 
     plt.box(False)
 
-    plt.plot(df, 'k')
+    # plt.plot(df, 'k')
     plt.plot(ath_df, 'go')
     plt.plot(dip_df[['close']], 'ro')
 
