@@ -145,6 +145,7 @@ import json
 
 stdout = {}
 # stdout["all"] = json.loads(df.to_json(orient='columns'))
+stdout["dates"] = { "from": utils.pd_ts_to_unix_ts(df.index[0]) * 1000, "to": utils.pd_ts_to_unix_ts(df.index[-1]) * 1000 }
 stdout["ath"] = json.loads(ath.to_json(orient='columns'))
 stdout["dip"] = json.loads(dip.to_json(orient='columns'))
 print(json.dumps(stdout))
