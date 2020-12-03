@@ -126,6 +126,7 @@ argparser = argparse.ArgumentParser(description='Dip Data')
 argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
 argparser.add_argument("-d", "--dip", help="dip percentage (integer)", required=True)
 argparser.add_argument("-p", "--provider", help="data provider", choices=['yahoo', 'iex'], required=True)
+argparser.add_argument("--plot", action="store_true", help="plot chart")
 
 args = argparser.parse_args()
 symbol = args.symbol
@@ -148,6 +149,9 @@ stdout["ath"] = json.loads(ath.to_json(orient='columns'))
 stdout["dip"] = json.loads(dip.to_json(orient='columns'))
 print(json.dumps(stdout))
 
+if args.plot:
+    draw_plot(df, ath, dip)
+
 if verbose:
     utils.cprint('\nstdout', Fore.YELLOW)
     utils.obj_print(stdout)
@@ -156,9 +160,7 @@ if verbose:
     print(df)
 
     utils.cprint('\nath df', Fore.YELLOW)
-    print(ath)
+    print(ath.to_json())
 
     utils.cprint('\ndip df', Fore.YELLOW)
     print(dip)
-
-    draw_plot(df, ath, dip)
