@@ -140,6 +140,10 @@ verbose = utils.terminal()
 data = DataContainer(symbol, provider, verbose=verbose)
 df = data.df
 
+if df is None:
+    print(json.dumps({"error": "no data"}))
+    exit()
+
 ath = ath_df(df)
 dip = dip_df(df, -(threshold / 100))
 
