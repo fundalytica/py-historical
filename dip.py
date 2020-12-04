@@ -1,3 +1,5 @@
+import json
+
 import argparse
 from colorama import Fore
 
