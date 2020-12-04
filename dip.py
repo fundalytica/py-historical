@@ -147,13 +147,12 @@ if df is None:
 ath = ath_df(df)
 dip = dip_df(df, -(threshold / 100))
 
-import json
-
 stdout = {}
-# stdout["all"] = json.loads(df.to_json(orient='columns'))
 stdout["dates"] = { "from": utils.pd_ts_to_unix_ts(df.index[0]) * 1000, "to": utils.pd_ts_to_unix_ts(df.index[-1]) * 1000 }
+stdout["all"] = json.loads(df.to_json(orient='columns'))
 stdout["ath"] = json.loads(ath.to_json(orient='columns'))
 stdout["dip"] = json.loads(dip.to_json(orient='columns'))
+stdout["size"] = utils.mbsize(stdout)
 print(json.dumps(stdout))
 
 if args.plot:
