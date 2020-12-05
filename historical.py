@@ -123,7 +123,7 @@ def draw_plot(df, ath_df=None, dip_df=None, filename=None):
     file_path = utils.file_path(__file__)
     plt.savefig(f'{file_path}/figs/{filename}.png', dpi=150)
 
-def stdout(df_dict):
+def stdout(df_dict, all):
     stdout = {}
     stdout["dates"] = { "from": utils.pd_ts_to_unix_ts(all.index[0]) * 1000, "to": utils.pd_ts_to_unix_ts(all.index[-1]) * 1000 }
     for key in df_dict:
@@ -164,15 +164,15 @@ if all is None:
 # historical data
 if not args.ath and not args.dip:
     df_dict = { "all": all }
-    stdout(df_dict)
+    stdout(df_dict, all)
     if args.plot:
         draw_plot(all, filename=symbol)
 
 # all time high data (+ historical)
 if args.ath:
     ath = ath_df(all)
-    df_dict = { "all": all, "ath": ath }
-    stdout(df_dict)
+    df_dict = { "ath": ath }
+    stdout(df_dict, all)
     if args.plot:
         draw_plot(all, ath, filename=f'{symbol}-ATH')
 
@@ -182,7 +182,7 @@ if args.dip:
     threshold = -(float(args.dip) / 100)
     dip = dip_df(all, threshold)
     df_dict = { "all": all, "ath": ath, "dip": dip }
-    stdout(df_dict)
+    stdout(df_dict, all)
     if args.plot:
         draw_plot(all, ath, dip, filename=f'{symbol}-DIP-{int(args.dip)}')
 
