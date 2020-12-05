@@ -87,86 +87,104 @@ def dip_df(df, threshold):
 
     return dip_df
 
-def draw_plot(df, ath_df, dip_df):
+def draw_plot(df, ath_df=None, dip_df=None, filename=None):
     plt.figure()
-
     plt.box(False)
 
-    # plt.plot(df, 'k')
-    plt.plot(ath_df, 'go')
-    plt.plot(dip_df[['close']], 'ro')
+    plt.plot(df, 'k')
+    if ath_df is not None:
+        plt.plot(ath_df, 'go')
+    if dip_df is not None:
+        plt.plot(dip_df[['close']], 'ro')
 
-    style = dict(size=10, color='red')
-    plt.title(f'{symbol} Dips < {-threshold:.0f}%', **style)
-
+    plt.title(f'{symbol}', **dict(size=10, color='black'))
     plt.tick_params(axis='both', which='major', labelsize=8)
     plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))
     plt.gca().xaxis.set_major_formatter(DateFormatter('%b %d \'%y'))
     plt.xticks(rotation=45)
 
     def annotate(df, column, color, ytext, formatter=None, arrowprops=None):
-        style = dict(size=9, color=color)
-
         for index in df.index:
             x = index
             y = df.at[index, 'close']
             text = df.at[index, column]
             text = formatter(text) if formatter else text
-            plt.annotate(text, xy=(x, y), xycoords='data', xytext=(0, ytext), textcoords='offset points', arrowprops=arrowprops, ha='center', va='center', **style)
+            plt.annotate(text, xy=(x, y), xycoords='data', xytext=(0, ytext), textcoords='offset points', arrowprops=arrowprops, ha='center', va='center', **dict(size=9, color=color))
 
-    annotate(ath_df, 'close', 'green', 15, lambda val: f'{val:,.0f}', dict(arrowstyle="]-", lw=1, color='green'))
-    annotate(dip_df, 'dip', 'red', -30, lambda val: f'{val * 100:,.0f}%', dict(arrowstyle="<-", lw=1, color='red'))
+    if ath_df is not None:
+        annotate(ath_df, 'close', 'green', 15, lambda val: f'{val:,.0f}', dict(arrowstyle="]-", lw=1, color='green'))
+    if dip_df is not None:
+        annotate(dip_df, 'dip', 'red', -30, lambda val: f'{val * 100:,.0f}%', dict(arrowstyle="<-", lw=1, color='red'))
 
     plt.margins(.1, .2)
     plt.tight_layout()
     plt.show()
 
     file_path = utils.file_path(__file__)
-    plt.savefig(f'{file_path}/figs/{symbol}-{threshold:.0f}.png', dpi=150)
+    plt.savefig(f'{file_path}/figs/{filename}.png', dpi=150)
+
+def stdout(df_dict):
+    stdout = {}
+    stdout["dates"] = { "from": utils.pd_ts_to_unix_ts(all.index[0]) * 1000, "to": utils.pd_ts_to_unix_ts(all.index[-1]) * 1000 }
+    for key in df_dict:
+        stdout[key] = json.loads((df_dict[key]).to_json(orient='columns'))
+    stdout["size"] = utils.mbsize(stdout)
+    print(json.dumps(stdout))
+
+def dfs_print(dict):
+    for key in dict:
+        utils.cprint(f'\n{key} df', Fore.YELLOW)
+        print(dict[key])
 
 argparser = argparse.ArgumentParser(description='Dip Data')
 argparser.add_argument("-s", "--symbol", help="stock symbol", required=True)
-argparser.add_argument("-d", "--dip", help="dip percentage (integer)", required=True)
-argparser.add_argument("-p", "--provider", help="data provider", choices=['yahoo', 'iex'], required=True)
+argparser.add_argument("-p", "--provider", help="market data provider", choices=['yahoo', 'iex'], required=True)
+
+argparser.add_argument("--ath", action="store_true", help="all time highs only")
+argparser.add_argument("--dip", help="dip percentage integer")
+
 argparser.add_argument("--plot", action="store_true", help="plot chart")
 
 args = argparser.parse_args()
 symbol = args.symbol
-threshold = float(args.dip)
 provider = args.provider
 
 verbose = utils.terminal()
 
 data = DataContainer(symbol, provider, verbose=verbose)
-df = data.df
 
-if df is None:
+all = data.df
+ath = None
+dip = None
+
+if all is None:
     print(json.dumps({"error": "no data"}))
     exit()
 
-ath = ath_df(df)
-dip = dip_df(df, -(threshold / 100))
+# historical data
+if not args.ath and not args.dip:
+    df_dict = { "all": all }
+    stdout(df_dict)
+    if args.plot:
+        draw_plot(all, filename=symbol)
 
-stdout = {}
-stdout["dates"] = { "from": utils.pd_ts_to_unix_ts(df.index[0]) * 1000, "to": utils.pd_ts_to_unix_ts(df.index[-1]) * 1000 }
-stdout["all"] = json.loads(df.to_json(orient='columns'))
-stdout["ath"] = json.loads(ath.to_json(orient='columns'))
-stdout["dip"] = json.loads(dip.to_json(orient='columns'))
-stdout["size"] = utils.mbsize(stdout)
-print(json.dumps(stdout))
+# all time high data (+ historical)
+if args.ath:
+    ath = ath_df(all)
+    df_dict = { "all": all, "ath": ath }
+    stdout(df_dict)
+    if args.plot:
+        draw_plot(all, ath, filename=f'{symbol}-ATH')
 
-if args.plot:
-    draw_plot(df, ath, dip)
+# dip data (+ historical, + all time high)
+if args.dip:
+    ath = ath_df(all)
+    threshold = -(float(args.dip) / 100)
+    dip = dip_df(all, threshold)
+    df_dict = { "all": all, "ath": ath, "dip": dip }
+    stdout(df_dict)
+    if args.plot:
+        draw_plot(all, ath, dip, filename=f'{symbol}-DIP-{int(args.dip)}')
 
 if verbose:
-    utils.cprint('\nstdout', Fore.YELLOW)
-    utils.obj_print(stdout)
-
-    utils.cprint('\ndf', Fore.YELLOW)
-    print(df)
-
-    utils.cprint('\nath df', Fore.YELLOW)
-    print(ath.to_json())
-
-    utils.cprint('\ndip df', Fore.YELLOW)
-    print(dip)
+    dfs_print(df_dict)
