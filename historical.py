@@ -176,7 +176,7 @@ if args.ath:
     if args.plot:
         draw_plot(all, ath, filename=f'{symbol}-ATH')
 
-# dip data (+ historical, + all time high)
+# dip data (+ historical + all time high)
 if args.dip:
     ath = ath_df(all)
     threshold = -(float(args.dip) / 100)
